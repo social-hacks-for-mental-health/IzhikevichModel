@@ -63,68 +63,130 @@ def update_nrn_param(param_dict):
     #TODO find out the python3 syntax for dereferencing key value pairs.
     #Below syntax is stupid, but how to just get key generically without for knowledge of its name and without iterating?
     items=[ (key, value) for key,value in param_dict.items() ]
-    #values=[ value for value in param_dict.values() ]
-    #for 
-    ##print(key)
-    #print(value)
+
 
     for key, value in items:
        print(key, value)
        evalstring='neuron.hoc.execute("m_RS_RS_pop[0].'+str(key)+'='+str(value)+'")'
        eval(evalstring)
+    #neuron.hoc.execute('forall{ psection() }')
+
+def update_stim_prot(stim_dict):
+    #TODO find out the python3 syntax for dereferencing key value pairs.
+    #Below syntax is stupid, but how to just get key generically without for knowledge of its name and without iterating?
+    items=[ (key, value) for key,value in stim_dict.items() ]
+
+
+    for key, value in items:
+       print(key, value)
+
+       
+
+       #evalstring='neuron.hoc.execute("objref explicitInput_RS_Iext")'
+       #eval(evalstring)
+       #evalstring='neuron.hoc.execute("RS_Iext { explicitInput_RS_Iext = new RS_Iext(0.500000) } ")'
+       evalstring='neuron.hoc.execute("explicitInput_RS_IextRS_pop0.'+str(key)+'='+str(value)+'")'
+       print(evalstring) 
+       eval(evalstring)
+       
     neuron.hoc.execute('forall{ psection() }')
+
+
+
 
 init_nrn_model()
 
 from NeuroML2 import LEMS_2007One_nrn 
 neuron.load_mechanisms(os.getcwd()+'/NeuroML2')    
 from NeuroML2.LEMS_2007One_nrn import NeuronSimulation
+
 ns = NeuronSimulation(tstop=1600, dt=0.0025)
+
+
+def local_run():
+
+    initialized = True
+    sim_start = time.time()
+    neuron.hoc.execute('tstop=1600')
+    neuron.hoc.execute('dt=0.0025')
+    neuron.hoc.tstop=1600
+    neuron.hoc.dt=0.0025   
+    
+    print("Running a simulation of %sms (dt = %sms)" % (neuron.hoc.tstop, neuron.hoc.dt))
+    #pdb.set_trace()
+    neuron.hoc.execute('run()')
+    neuron.hoc.execute('forall{ psection() }')
+
+    sim_end = time.time()
+    sim_time = sim_end - sim_start
+    print("Finished NEURON simulation in %f seconds (%f mins)..."%(sim_time, sim_time/60.0))
+
+    #TODO drag results across to pyhoc name space visible here.
+    #self.save_results()
+
+
+def advance(self):
+    #over write/load regular advance
+
+    if not initialized:
+        neuron.hoc.finitialize()
+        initialized = True
+
+    neuron.hoc.fadvance()
+
+
+def mrun():
+    ns = NeuronSimulation(tstop=1600, dt=0.0025)
+    local_run()
 
 
 neuron.hoc.execute('forall{ psection() }')
 neuron.psection(neuron.nrn.Section())
 param_dict={}
+import time
+start=time.time()
+
+#Defaults: <pulseGenerator id="RS_Iext" delay="500ms" duration="1000ms" amplitude="100.0 pA"/>
 
 for vr in np.linspace(-75,-50,6):
     param_dict={}#Very important to redeclare dictionary or badness.
-    param_dict['vr']=vr               
+    param_dict['vr']=vr 
+    stim_dict={}
+    stim_dict['delay']=200
+    stim_dict['duration']=500
+    stim_dict['amplitude']=200.0
+         
+    update_stim_prot(stim_dict)     
     update_nrn_param(param_dict)
-    ns.run()
 
-pdb.set_trace()
+
+    local_run()
+
 
 for i,a in enumerate(np.linspace(0.015,0.045,7)):
     for j,b in enumerate(np.linspace(-3.5,-0.5,7)):
-        param_dict={}#Very important to redeclare dictionary or badness.
-        param_dict['vr']=vr
+        for k,a in enumerate(np.linspace(50.0,300.0,2)):
+            param_dict={}#Very important to redeclare dictionary or badness.
+            param_dict['vr']=vr
 
-        param_dict['a']=str(a) 
-        param_dict['b']=str(b)               
-        param_dict['C']=str(150)
-        param_dict['k']=str(0.70) 
-        param_dict['vpeak']=str(45)                      
-                    
-        update_nrn_param(param_dict)
-        ns.run()
-        #print(update_nrn_param)
-        #model = ReducedModel(LEMS_MODEL_PATH,
-        ''' 
-                     name='a=%.3fperms_b=%.1fnS' % (a,b), 
-                     attrs={'//izhikevich2007Cell':
-                                {'b':'%.1f nS' % b,
-                                 'a':'%.3f per_ms' % a,
-                                 'C':'150 pF',
-                                 'k':'0.70 nS_per_mV',
-                                 'vr':'-68 mV',
-                                 'vpeak':'45 mV'}
-                           })
-                           
-        #model.skip_run = True
-        models2.append(model)
-score_matrix2 = suite.judge(models2)
-  '''                   
-      
+            param_dict['a']=str(a) 
+            param_dict['b']=str(b)               
+            param_dict['C']=str(150)
+            param_dict['k']=str(0.70) 
+            param_dict['vpeak']=str(45)                      
+                        
+            update_nrn_param(param_dict)
+            stim_dict={}
+            stim_dict['delay']=200
+            stim_dict['duration']=500
+            stim_dict['amplitude']=k*100+150
+
+            update_stim_prot(stim_dict)
+            local_run()
+stop=time.time()    
+delta_time=stop-start
+print(delta_time)    
+        
 
 
 #neuron.hoc.execute('RS_pop[0].L = 11.1')
