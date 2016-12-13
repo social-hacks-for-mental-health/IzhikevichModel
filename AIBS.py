@@ -45,6 +45,7 @@ def init_nrn_model():#do this once only.
     # github.com/OpenSourceBrain/IzhikevichModel.
     DEFAULTS={}
     DEFAULTS['v']=True
+    print('a')
     pynml.run_lems_with_jneuroml_neuron(LEMS_MODEL_PATH, 
                                       skip_run=False,
                                       nogui=False, 
@@ -55,24 +56,39 @@ def init_nrn_model():#do this once only.
                                       only_generate_scripts = True,
                                       verbose=DEFAULTS['v'],
                                       exit_on_fail = True)
-    init_nrn_model()
+                                      
+    print('b')
+
+
+print('c')    
+
 
 def update_nrn_param(param_dict):
     #TODO find out the python3 syntax for dereferencing key value pairs.
     #Below syntax is stupid, but how to just get key generically without for knowledge of its name and without iterating?
-    key=[ key for key in param_dict.keys() ][0]
-    value=[ value for value in param_dict.values() ][0]
-    print(key)
-    print(value)
+    items=[ (key, value) for key,value in param_dict.items() ]
+    #values=[ value for value in param_dict.values() ]
+    #for 
+    ##print(key)
+    #print(value)
     pdb.set_trace()
-    evalstring='neuron.hoc.execute("m_RS_RS_pop[0].'+str(key)+'='+str(value)+'")'
-    eval(evalstring)
+    for key, value in items:
+       pdb.set_trace()
+    
+       evalstring='neuron.hoc.execute("m_RS_RS_pop[0].'+str(key)+'='+str(value)+'")'
+       eval(evalstring)
     neuron.hoc.execute('forall{ psection() }')
-   
-from NeuroML2 import LEMS_2007One_nrn     
+
+init_nrn_model()
+
+from NeuroML2 import LEMS_2007One_nrn 
+neuron.load_mechanisms(os.getcwd()+'/NeuroML2')    
 from NeuroML2.LEMS_2007One_nrn import NeuronSimulation
-neuron.load_mechanisms(os.getcwd()+'/NeuroML2')
+
+
 ns = NeuronSimulation(tstop=1600, dt=0.0025)
+
+
 neuron.hoc.execute('forall{ psection() }')
 neuron.psection(neuron.nrn.Section())
 param_dict={}
@@ -80,7 +96,29 @@ for vr in np.linspace(-75,-50,6):
     param_dict['vr']=vr               
     update_nrn_param(param_dict)
 
-
+for i,a in enumerate(np.linspace(0.015,0.045,7)):
+    for j,b in enumerate(np.linspace(-3.5,-0.5,7)):
+        
+        param_dict['vr']=vr               
+        update_nrn_param(param_dict)
+        
+        #model = ReducedModel(LEMS_MODEL_PATH,
+        ''' 
+                     name='a=%.3fperms_b=%.1fnS' % (a,b), 
+                     attrs={'//izhikevich2007Cell':
+                                {'b':'%.1f nS' % b,
+                                 'a':'%.3f per_ms' % a,
+                                 'C':'150 pF',
+                                 'k':'0.70 nS_per_mV',
+                                 'vr':'-68 mV',
+                                 'vpeak':'45 mV'}
+                           })
+                           
+        #model.skip_run = True
+        models2.append(model)
+score_matrix2 = suite.judge(models2)
+  '''                   
+      
 
 
 #neuron.hoc.execute('RS_pop[0].L = 11.1')
