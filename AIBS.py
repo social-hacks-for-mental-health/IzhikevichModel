@@ -45,7 +45,7 @@ def init_nrn_model():#do this once only.
     # github.com/OpenSourceBrain/IzhikevichModel.
     DEFAULTS={}
     DEFAULTS['v']=True
-    print('a')
+
     pynml.run_lems_with_jneuroml_neuron(LEMS_MODEL_PATH, 
                                       skip_run=False,
                                       nogui=False, 
@@ -57,10 +57,6 @@ def init_nrn_model():#do this once only.
                                       verbose=DEFAULTS['v'],
                                       exit_on_fail = True)
                                       
-    print('b')
-
-
-print('c')    
 
 
 def update_nrn_param(param_dict):
@@ -71,10 +67,9 @@ def update_nrn_param(param_dict):
     #for 
     ##print(key)
     #print(value)
-    pdb.set_trace()
+
     for key, value in items:
-       pdb.set_trace()
-    
+       print(key, value)
        evalstring='neuron.hoc.execute("m_RS_RS_pop[0].'+str(key)+'='+str(value)+'")'
        eval(evalstring)
     neuron.hoc.execute('forall{ psection() }')
@@ -84,24 +79,35 @@ init_nrn_model()
 from NeuroML2 import LEMS_2007One_nrn 
 neuron.load_mechanisms(os.getcwd()+'/NeuroML2')    
 from NeuroML2.LEMS_2007One_nrn import NeuronSimulation
-
-
 ns = NeuronSimulation(tstop=1600, dt=0.0025)
 
 
 neuron.hoc.execute('forall{ psection() }')
 neuron.psection(neuron.nrn.Section())
 param_dict={}
+
 for vr in np.linspace(-75,-50,6):
+    param_dict={}#Very important to redeclare dictionary or badness.
     param_dict['vr']=vr               
     update_nrn_param(param_dict)
+    ns.run()
+
+pdb.set_trace()
 
 for i,a in enumerate(np.linspace(0.015,0.045,7)):
     for j,b in enumerate(np.linspace(-3.5,-0.5,7)):
-        
-        param_dict['vr']=vr               
+        param_dict={}#Very important to redeclare dictionary or badness.
+        param_dict['vr']=vr
+
+        param_dict['a']=str(a) 
+        param_dict['b']=str(b)               
+        param_dict['C']=str(150)
+        param_dict['k']=str(0.70) 
+        param_dict['vpeak']=str(45)                      
+                    
         update_nrn_param(param_dict)
-        
+        ns.run()
+        #print(update_nrn_param)
         #model = ReducedModel(LEMS_MODEL_PATH,
         ''' 
                      name='a=%.3fperms_b=%.1fnS' % (a,b), 
