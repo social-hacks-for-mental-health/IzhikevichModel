@@ -27,11 +27,49 @@ from neuronunit import aibs
 
 import pdb
 
+from neuronunit.models import backends
+
+IZHIKEVICH_PATH = os.getcwd()
+LEMS_MODEL_PATH = os.path.join(IZHIKEVICH_PATH,'NeuroML2/LEMS_2007One.xml')     
+NeuronObject=backends.NEURONBackend(LEMS_MODEL_PATH)
+NeuronObject.load_model()#Only needs to occur once
+#NeuronObject.update_nrn_param(param_dict)
+#NeuronObject.update_inject_current(stim_dict)
+
+#print(dir(NeuronObject))
+for vr in iter(np.linspace(-75,-50,6)):
+    for i,a in iter(enumerate(np.linspace(0.015,0.045,7))):
+        for j,b in iter(enumerate(np.linspace(-3.5,-0.5,7))):
+            for k in iter(np.linspace(100,200,4)):
+                param_dict={}#Very important to redeclare dictionary or badness.
+                param_dict['vr']=vr
+
+                param_dict['a']=str(a) 
+                param_dict['b']=str(b)               
+                param_dict['C']=str(150)
+                param_dict['k']=str(0.70) 
+                param_dict['vpeak']=str(45)                      
+                             
+                NeuronObject.update_nrn_param(param_dict)
+                stim_dict={}
+                stim_dict['delay']=200
+                stim_dict['duration']=500
+                stim_dict['amplitude']=k#*100+150
+
+                NeuronObject.update_inject_current(stim_dict)
+                NeuronObject.local_run()
+                vm,im,time=NeuronObject.out_to_neo()
+                print('\n')
+                print('\n')
+                print(vm.trace)
+                print(time.trace)
+                print(im.trace)
+                print('\n')
+                print('\n')
+
+
 from neuroml import nml
 from pyneuroml import pynml
-
-
-
 def init_nrn_model():#do this once only.
     '''
     Take a declarative model description, and convert it into an implementation, stored in a pyhoc file.
@@ -45,7 +83,7 @@ def init_nrn_model():#do this once only.
     # github.com/OpenSourceBrain/IzhikevichModel.
     DEFAULTS={}
     DEFAULTS['v']=True
-
+    #Create a pyhoc file using jneuroml to convert from NeuroML to pyhoc.
     pynml.run_lems_with_jneuroml_neuron(LEMS_MODEL_PATH, 
                                       skip_run=False,
                                       nogui=False, 
@@ -56,6 +94,15 @@ def init_nrn_model():#do this once only.
                                       only_generate_scripts = True,
                                       verbose=DEFAULTS['v'],
                                       exit_on_fail = True)
+    
+    #import the contents of the file into the current names space.
+    from NeuroML2 import LEMS_2007One_nrn 
+    #make sure mechanisms are loaded
+    neuron.load_mechanisms(os.getcwd()+'/NeuroML2')    
+    #import the default simulation protocol
+    from NeuroML2.LEMS_2007One_nrn import NeuronSimulation
+    #although this may be unnecessary.
+    return NeuronSimulation(tstop=1600, dt=0.0025)
                                       
 
 
@@ -94,13 +141,7 @@ def update_stim_prot(stim_dict):
 
 
 
-init_nrn_model()
-
-from NeuroML2 import LEMS_2007One_nrn 
-neuron.load_mechanisms(os.getcwd()+'/NeuroML2')    
-from NeuroML2.LEMS_2007One_nrn import NeuronSimulation
-
-ns = NeuronSimulation(tstop=1600, dt=0.0025)
+ns=init_nrn_model()
 
 
 def local_run():
