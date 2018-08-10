@@ -24,6 +24,7 @@ simulations
 izhikevich15jun19
 MATLAB/results/*.dat
 NeuroML2/results/*.dat
+<<<<<<< HEAD
 	
 PyNN/results/
 nnn/
@@ -31,3 +32,6 @@ nnn/
 /NeuroML2/LEMS_2007One_netpyne.py
 /NeuroML2/*.pov
 /NeuroML2/*.svg
+=======
+*.npy
+>>>>>>> 74f129bfc7184ec415880c03b5c721609768d7e7
