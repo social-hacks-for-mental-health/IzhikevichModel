@@ -14,7 +14,10 @@ simple.show('v7a','v7b','v7bw') # compare voltage output for 3 versions of the 2
 from neuron import h, gui
 import numpy as np
 import izhi2007Wrapper as izh07
+import matplotlib
+matplotlib.use('agg')
 import pylab as plt
+
 import pprint as pp
 plt.ion()
 fih = []
@@ -54,7 +57,7 @@ h.tstop=1250
 recd = {'u3a':[iz03a._ref_u], 'v3a':[iz03a._ref_V], 'u3b':[iz03b._ref_u], 'v3b':[sec03b(0.5)._ref_v], 
         'u7a':[iz07a._ref_u], 'v7a':[iz07a._ref_V], 'u7b':[iz07b._ref_u], 'v7b':[sec07b(0.5)._ref_v],
         'u7bw':[iz07bw.izh._ref_u], 'v7bw':[iz07bw.sec(0.5)._ref_v]}
-[(v.append(h.Vector(h.tstop/h.dt+100)),v[1].record(v[0])) for x,v in recd.iteritems()]
+[(v.append(h.Vector(h.tstop/h.dt+100)),v[1].record(v[0])) for x,v in recd.items()]
 def vtvec(vv): return np.linspace(0, len(vv)*h.dt, len(vv), endpoint=True)
 
 # run and plot
@@ -66,9 +69,9 @@ def show (*vars):
   if len(vars)==0: vars=recd.keys()
   tvec=vtvec(recd['v7a'][1])
   plt.clf()
-  [plt.plot(tvec,v[1]) for x,v in recd.iteritems() if x in vars]
-  pp.pprint([v[1].as_numpy()[-5:] for x,v in recd.iteritems() if x in vars])
+  [plt.plot(tvec,v[1]) for x,v in recd.items() if x in vars]
+  pp.pprint([list(v[1])[-5:] for x,v in recd.items() if x in vars])
   plt.xlim(0,h.tstop)
 
-# h.run()
-# show()
+h.run()
+show()
